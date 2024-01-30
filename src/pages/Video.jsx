@@ -81,7 +81,7 @@ const Video = () => {
                 });
             })
             .catch(err => {
-                console.log('Failed to get local stream', err);
+                alert('Failed to get local stream', err);
             });
     };
 
@@ -95,7 +95,7 @@ const Video = () => {
                 });
             })
             .catch(err => {
-                console.log('Failed to get local stream', err);
+                alert('Failed to get local stream', err);
             });
     });
 
