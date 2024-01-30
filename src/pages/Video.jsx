@@ -89,7 +89,7 @@ const Video = () => {
         navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             .then(stream => {
                 call.answer(stream);
-                call.on('stream', function (remoteStream) {
+                call.on('stream',  (remoteStream) => {
                     otherUserVideoRef.current.srcObject = remoteStream;
                     otherUserVideoRef.current.play();
                 });
@@ -105,8 +105,8 @@ const Video = () => {
                 <Title>Test Video Chat</Title>
                 <Title2>Your Id : {peerId}</Title2>
                 <VideoContainer>
-                    <VideoOwn ref={currentUserVideoRef} autoPlay playsInline ></VideoOwn>
-                    <VideoOther ref={otherUserVideoRef} autoPlay playsInline></VideoOther>
+                    <VideoOwn ref={currentUserVideoRef} autoPlay ></VideoOwn>
+                    <VideoOther ref={otherUserVideoRef} autoPlay ></VideoOther>
                 </VideoContainer>
                 <InputContainer>
                     <Input placeholder="Enter id" value={idValue} onChange={(e) => { setIdValue(e.target.value) }} />
