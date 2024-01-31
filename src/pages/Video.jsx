@@ -57,43 +57,58 @@ const Video = () => {
     const [idValue, setIdValue] = useState('');
     const currentUserVideoRef = useRef(null);
     const otherUserVideoRef = useRef(null);
+    const peer = useRef(new Peer());
 
-    useEffect(() => {  
-        const peer = new Peer();
-        peer.on('open', (id) => {
+    useEffect(() => {
+        peer.current.on('open', (id) => {
             setPeerId(id);
         });
         return () => {
-            peer.disconnect();
+            peer.current.disconnect();
         };
     }, []);
 
     let myVideoStream;
     useEffect(() => {
-        navigator.mediaDevices.getUserMedia({ video:true, audio:true })
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             .then(stream => {
                 myVideoStream = stream;
                 addVideoStream(currentUserVideoRef.current, stream);
             })
             .catch(error => {
-                console.error('Error accessing camera or microphone:', error);
+                alert('Error accessing camera or microphone:', error);
             });
+        return () => {
+            if (myVideoStream) {
+                myVideoStream.getTracks().forEach(track => track.stop());
+            }
+        };
     }, []);
 
     const addVideoStream = (video, stream) => {
         video.srcObject = stream;
-        video.addEventListener('loadedmetadata', () => {
-            video.play();
-        });
+        video.play();
     }
 
     const connectToNewUser = () => {
-        const peer = new Peer();
-        const call = peer.call(idValue, myVideoStream);
+        const call = peer.current.call(idValue, myVideoStream);
         call.on('stream', userVideoStream => {
             addVideoStream(otherUserVideoRef.current, userVideoStream);
         });
     }
+
+    peer.current.on('call', (call) => {
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(stream => {
+                call.answer(stream); 
+                call.on('stream', function (remoteStream) {
+                    addVideoStream(otherUserVideoRef.current, remoteStream);
+                });
+            })
+            .catch(error => {
+                alert('Error accessing camera or microphone:', error);
+            });
+    });
 
     return (
         <>
@@ -112,6 +127,4 @@ const Video = () => {
         </>
     )
 }
-
-
 export default Video
