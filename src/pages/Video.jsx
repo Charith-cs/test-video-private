@@ -53,60 +53,47 @@ const Button = styled.button`
 `;
 
 const Video = () => {
+    const peer = new Peer();
     const [peerId, setPeerId] = useState(null);
     const [idValue, setIdValue] = useState('');
     const currentUserVideoRef = useRef(null);
     const otherUserVideoRef = useRef(null);
-    const peer = useRef(new Peer());
 
     useEffect(() => {
-        peer.current.on('open', (id) => {
+        peer.on('open', (id) => {
             setPeerId(id);
         });
         return () => {
-            peer.current.disconnect();
+            peer.disconnect();
         };
     }, []);
 
-    let myVideoStream;
-    useEffect(() => {
+    const call = () => {
+        currentUserVideoRef.current.muted = true;
         navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             .then(stream => {
-                myVideoStream = stream;
-                addVideoStream(currentUserVideoRef.current, stream);
-            })
-            .catch(error => {
-                alert('Error accessing camera or microphone:', error);
-            });
-        return () => {
-            if (myVideoStream) {
-                myVideoStream.getTracks().forEach(track => track.stop());
-            }
-        };
-    }, []);
-
-    const addVideoStream = (video, stream) => {
-        video.srcObject = stream;
-        video.play();
-    }
-
-    const connectToNewUser = () => {
-        const call = peer.current.call(idValue, myVideoStream);
-        call.on('stream', userVideoStream => {
-            addVideoStream(otherUserVideoRef.current, userVideoStream);
-        });
-    }
-
-    peer.current.on('call', (call) => {
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then(stream => {
-                call.answer(stream); 
-                call.on('stream', function (remoteStream) {
-                    addVideoStream(otherUserVideoRef.current, remoteStream);
+                const call = peer.call(idValue, stream);
+                call.on('stream', (remoteStream) => {
+                    currentUserVideoRef.current.srcObject = remoteStream;
+                    currentUserVideoRef.current.play();
                 });
             })
-            .catch(error => {
-                alert('Error accessing camera or microphone:', error);
+            .catch(err => {
+                alert('Failed to get local stream', err);
+            });
+    };
+    
+    peer.on('call', function (call) {
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+            .then(stream => {
+                call.answer(stream);
+                call.on('stream',  (remoteStream) => {
+                    otherUserVideoRef.current.srcObject = remoteStream;
+                    otherUserVideoRef.current.play();
+                });
+            })
+            .catch(err => {
+                alert('Failed to get local stream', err);
             });
     });
 
@@ -121,7 +108,7 @@ const Video = () => {
                 </VideoContainer>
                 <InputContainer>
                     <Input placeholder="Enter id" value={idValue} onChange={(e) => { setIdValue(e.target.value) }} />
-                    <Button onClick={connectToNewUser}>Call Now</Button>
+                    <Button onClick={call}>Call Now</Button>
                 </InputContainer>
             </Container>
         </>
