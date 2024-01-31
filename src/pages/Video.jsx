@@ -76,8 +76,8 @@ const Video = () => {
             .then(stream => {
                 const call = peer.call(idValue, stream);
                 call.on('stream', (remoteStream) => {
-                    otherUserVideoRef.current.srcObject = remoteStream;
-                    otherUserVideoRef.current.play();
+                    currentUserVideoRef.current.srcObject = remoteStream;
+                    currentUserVideoRef.current.play();
                 });
             })
             .catch(err => {
