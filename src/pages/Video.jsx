@@ -53,47 +53,52 @@ const Button = styled.button`
 `;
 
 const Video = () => {
-    const peer = new Peer();
+    const peer = useRef(new Peer());
+    const ownVideoRef = useRef(null);
+    const otherVideoRef = useRef(null);
     const [peerId, setPeerId] = useState(null);
-    const [idValue, setIdValue] = useState('');
-    const currentUserVideoRef = useRef(null);
-    const otherUserVideoRef = useRef(null);
+    const [callId, setCallId] = useState('');
 
     useEffect(() => {
-        peer.on('open', (id) => {
+        peer.current.on('open', (id) => {
             setPeerId(id);
         });
+
+        // Clean up PeerJS when component unmounts
         return () => {
-            peer.disconnect();
+            peer.current.destroy();
         };
     }, []);
 
-    const call = () => {
-        currentUserVideoRef.current.muted = true;
+    const startCall = () => {
         navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             .then(stream => {
-                const call = peer.call(idValue, stream);
-                call.on('stream', (remoteStream) => {
-                    currentUserVideoRef.current.srcObject = remoteStream;
-                    currentUserVideoRef.current.play();
+                const call = peer.current.call(callId, stream);
+                call.on('stream', remoteStream => {
+                    if (ownVideoRef.current) {
+                        ownVideoRef.current.srcObject = stream;
+                        ownVideoRef.current.play();
+                    }
                 });
             })
             .catch(err => {
-                alert('Failed to get local stream', err);
+                console.error('Failed to get local stream', err);
             });
     };
-    
-    peer.on('call', function (call) {
+
+    peer.current.on('call', call => {
         navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             .then(stream => {
                 call.answer(stream);
-                call.on('stream',  (remoteStream) => {
-                    otherUserVideoRef.current.srcObject = remoteStream;
-                    otherUserVideoRef.current.play();
+                call.on('stream', remoteStream => {
+                    if (otherVideoRef.current) {
+                        otherVideoRef.current.srcObject = remoteStream;
+                        otherVideoRef.current.play();
+                    }
                 });
             })
             .catch(err => {
-                alert('Failed to get local stream', err);
+                console.error('Failed to get local stream', err);
             });
     });
 
@@ -101,17 +106,23 @@ const Video = () => {
         <>
             <Container>
                 <Title>Test Video Chat</Title>
-                <Title2>Your Id : {peerId}</Title2>
+                <Title2><p style={{ color: 'red' }}>Your Id: </p> {peerId}</Title2>
+
                 <VideoContainer>
-                    <VideoOwn ref={currentUserVideoRef} autoPlay ></VideoOwn>
-                    <VideoOther ref={otherUserVideoRef} autoPlay ></VideoOther>
+                    <Title2>Own</Title2>
+                    <video ref={ownVideoRef} autoPlay muted />
+
+                    <Title2>Other</Title2>
+                    <video ref={otherVideoRef} autoPlay />
+
                 </VideoContainer>
+
                 <InputContainer>
-                    <Input placeholder="Enter id" value={idValue} onChange={(e) => { setIdValue(e.target.value) }} />
-                    <Button onClick={call}>Call Now</Button>
+                    <Input placeholder="Enter id" value={callId} onChange={(e) => { setCallId(e.target.value) }} />
+                    <Button onClick={startCall}>Call Now</Button>
                 </InputContainer>
             </Container>
         </>
-    )
-}
+    );
+};
 export default Video
