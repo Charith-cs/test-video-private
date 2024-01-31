@@ -53,53 +53,44 @@ const Button = styled.button`
 `;
 
 const Video = () => {
-    const peer = useRef(new Peer());
-    const ownVideoRef = useRef(null);
-    const otherVideoRef = useRef(null);
+
+    const peer = new Peer();
+    const OwnVideo = useRef(null);
+    const OtherVideo = useRef(null);
     const [peerId, setPeerId] = useState(null);
-    const [callId, setCallId] = useState('');
+    const [callId, setCallId] = useState(null);
 
     useEffect(() => {
-        peer.current.on('open', (id) => {
+        peer.on('open', (id) => {
             setPeerId(id);
         });
-
-        // Clean up PeerJS when component unmounts
-        return () => {
-            peer.current.destroy();
-        };
     }, []);
 
     const startCall = () => {
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then(stream => {
-                const call = peer.current.call(callId, stream);
-                call.on('stream', remoteStream => {
-                    if (ownVideoRef.current) {
-                        ownVideoRef.current.srcObject = stream;
-                        ownVideoRef.current.play();
-                    }
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true },
+            (stream) => {
+                var call = peer.call(callId.toString(), stream);
+                call.on('stream', function (remoteStream) {
+                    OwnVideo.current.mute = true;
+                    OwnVideo.current.srcObject = remoteStream;
+                    OwnVideo.current.play();
                 });
-            })
-            .catch(err => {
-                console.error('Failed to get local stream', err);
+            }, function (err) {
+                console.log('Failed to get local stream', err);
             });
-    };
+    }
 
-    peer.current.on('call', call => {
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then(stream => {
-                call.answer(stream);
-                call.on('stream', remoteStream => {
-                    if (otherVideoRef.current) {
-                        otherVideoRef.current.srcObject = remoteStream;
-                        otherVideoRef.current.play();
-                    }
-                });
-            })
-            .catch(err => {
-                console.error('Failed to get local stream', err);
+    
+    peer.on('call',  (call) => {
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true } , (stream) => {
+            call.answer(stream); 
+            call.on('stream', function (remoteStream) {
+                OtherVideo.current.srcObject = remoteStream;
+                OtherVideo.current.play();
             });
+        }, function (err) {
+            console.log('Failed to get local stream', err);
+        });
     });
 
     return (
@@ -109,11 +100,12 @@ const Video = () => {
                 <Title2><p style={{ color: 'red' }}>Your Id: </p> {peerId}</Title2>
 
                 <VideoContainer>
+
                     <Title2>Own</Title2>
-                    <video ref={ownVideoRef} autoPlay muted />
+                    <VideoOwn ref={OwnVideo} autoPlay />
 
                     <Title2>Other</Title2>
-                    <video ref={otherVideoRef} autoPlay />
+                    <VideoOther ref={OtherVideo} autoPlay />
 
                 </VideoContainer>
 
@@ -123,6 +115,6 @@ const Video = () => {
                 </InputContainer>
             </Container>
         </>
-    );
-};
+    )
+}
 export default Video
