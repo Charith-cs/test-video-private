@@ -72,8 +72,7 @@ const Video = () => {
 
     const call = () => {
         currentUserVideoRef.current.muted = true;
-        const media = navigator.mediaDevices.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-        media({ video: true, audio: true })
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             .then(stream => {
                 const call = peer.call(idValue, stream);
                 call.on('stream', (remoteStream) => {
@@ -87,8 +86,7 @@ const Video = () => {
     };
 
     peer.on('call', function (call) {
-        const media = navigator.mediaDevices.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
-        media({ video: true, audio: true })
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             .then(stream => {
                 call.answer(stream);
                 call.on('stream',  (remoteStream) => {
