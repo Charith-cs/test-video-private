@@ -53,15 +53,13 @@ const Button = styled.button`
 `;
 
 const Video = () => {
-
-    const peer = new Peer();
-    //const [isWebcamOpen, setIsWebcamOpen] = useState(false);
-    const currentUserVideoRef = useRef(null);
-    const otherUserVideoRef = useRef(null);
     const [peerId, setPeerId] = useState(null);
     const [idValue, setIdValue] = useState('');
+    const currentUserVideoRef = useRef(null);
+    const otherUserVideoRef = useRef(null);
 
     useEffect(() => {  
+        const peer = new Peer();
         peer.on('open', (id) => {
             setPeerId(id);
         });
@@ -70,34 +68,32 @@ const Video = () => {
         };
     }, []);
 
-    const call = () => {
-        currentUserVideoRef.current.muted = true;
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    let myVideoStream;
+    useEffect(() => {
+        navigator.mediaDevices.getUserMedia({ video:true, audio:true })
             .then(stream => {
-                const call = peer.call(idValue, stream);
-                call.on('stream', (remoteStream) => {
-                    currentUserVideoRef.current.srcObject = remoteStream;
-                    currentUserVideoRef.current.play();
-                });
+                myVideoStream = stream;
+                addVideoStream(currentUserVideoRef.current, stream);
             })
-            .catch(err => {
-                alert('Failed to get local stream', err);
+            .catch(error => {
+                console.error('Error accessing camera or microphone:', error);
             });
-    };
+    }, []);
 
-    peer.on('call', function (call) {
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-            .then(stream => {
-                call.answer(stream);
-                call.on('stream',  (remoteStream) => {
-                    otherUserVideoRef.current.srcObject = remoteStream;
-                    otherUserVideoRef.current.play();
-                });
-            })
-            .catch(err => {
-                alert('Failed to get local stream', err);
-            });
-    });
+    const addVideoStream = (video, stream) => {
+        video.srcObject = stream;
+        video.addEventListener('loadedmetadata', () => {
+            video.play();
+        });
+    }
+
+    const connectToNewUser = () => {
+        const peer = new Peer();
+        const call = peer.call(idValue, myVideoStream);
+        call.on('stream', userVideoStream => {
+            addVideoStream(otherUserVideoRef.current, userVideoStream);
+        });
+    }
 
     return (
         <>
@@ -110,44 +106,12 @@ const Video = () => {
                 </VideoContainer>
                 <InputContainer>
                     <Input placeholder="Enter id" value={idValue} onChange={(e) => { setIdValue(e.target.value) }} />
-                    <Button onClick={call}>Call Now</Button>
+                    <Button onClick={connectToNewUser}>Call Now</Button>
                 </InputContainer>
             </Container>
         </>
     )
 }
 
-
-
-
-            {  /*  <div style={{ marginLeft: "auto", marginRight: "auto", textAlign: "center" }}>
-    <h1>Hello, let's check the webcam</h1>
-    <video id="vid" style={{ width: "300px", height: "200px", border: "1px solid black", display: isWebcamOpen ? "block" : "none" }} ></video>
-    <br />
-    <button id="but"  style={{ display: isWebcamOpen ? "none" : "block" }}>Open Webcam</button>
-  </div>
-  
-  
-      const handleOpenWebcam = () => {
-        const video = document.getElementById("vid");
-        video.muted = true;
-
-        navigator.mediaDevices
-            .getUserMedia({ video: true, audio: true })
-            .then((stream) => {
-                video.srcObject = stream;
-                video.addEventListener("loadedmetadata", () => {
-                    video.play();
-                    setIsWebcamOpen(true);
-                });
-            })
-            .catch((error) => {
-                console.error("Error accessing webcam:", error);
-                alert("Failed to access webcam. Please check permissions and try again.");
-            });
-    };
-  
-  */}
-        
 
 export default Video
